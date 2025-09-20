@@ -69,9 +69,9 @@ export default function BrandPills({ onBrandSelect }: BrandPillsProps) {
     }
   }
 
-  return (
-    <div className="relative bg-black py-3 border-b border-gray-800">
-      <div className="container-custom">
+return (
+  <div className="bg-black py-3 border-b border-gray-800">
+    <div className="flex items-center justify-center">
         <div className="relative flex items-center">
           {/* Left Arrow */}
           {showLeftArrow && (

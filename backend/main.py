@@ -619,11 +619,11 @@ async def create_product(
 
 @app.get("/api/products", response_model=list[ProductResponse])
 async def get_products(
-        category: Optional[str] = None,
-        brand: Optional[str] = None,
-        is_featured: Optional[bool] = None,
-        skip: int = 0,
-        limit: int = 20
+    category: Optional[str] = None,
+    brand: Optional[str] = None,
+    is_featured: Optional[bool] = None,
+    skip: int = 0,
+    limit: int = 20
 ):
     """Get all products with optional filters"""
     query = {"is_active": True}
@@ -635,6 +635,8 @@ async def get_products(
     if is_featured is not None:
         query["is_featured"] = is_featured
 
+    print(f"Query: {query}")  # Debug line
+
     products = []
     cursor = db.products.find(query).skip(skip).limit(limit)
 
@@ -642,6 +644,7 @@ async def get_products(
         product["id"] = str(product["_id"])
         products.append(ProductResponse(**product))
 
+    print(f"Found {len(products)} products")  # Debug line
     return products
 
 #search optiom
