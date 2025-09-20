@@ -108,3 +108,36 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+ /* Ramadan flat discount */
+
+@keyframes scroll {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-scroll {
+  display: inline-block;
+  animation: scroll 15s linear infinite;
+  white-space: nowrap;
+}
+
+
+/* Mobile Bottom Navigation */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 64px; /* Space for bottom nav */
+  }
+}
+
+/* Hide scrollbar on mobile for better UX */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  html {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

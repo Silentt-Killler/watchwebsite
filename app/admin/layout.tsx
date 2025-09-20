@@ -18,9 +18,9 @@ export default function AdminLayout({
     const checkAdmin = async () => {
       const token = localStorage.getItem('token')
       if (!token) {
-        router.push('/login')
-        return
-      }
+          router.push('/admin/login')
+          return
+        }
 
       try {
         const res = await fetch('http://localhost:8000/api/auth/me', {
@@ -47,7 +47,7 @@ export default function AdminLayout({
 
   const handleLogout = () => {
     localStorage.removeItem('token')
-    router.push('/admin//login')
+    router.push('/admin/login')
   }
 
   return (

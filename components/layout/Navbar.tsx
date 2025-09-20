@@ -8,6 +8,7 @@ import { navigationItems } from '@/lib/constants/navigation'
 import MobileMenu from './MobileMenu'
 import { cn } from '@/lib/utils'
 import { useCart } from '@/contexts/CartContext'
+import InlineSearch from '@/components/search/InlineSearch'
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -23,6 +24,7 @@ export default function Navbar() {
   const [user, setUser] = useState<UserData | null>(null)
   const { itemCount } = useCart()
   const dropdownRef = useRef<HTMLDivElement>(null)
+
 
   useEffect(() => {
     checkAuth()
@@ -96,91 +98,95 @@ export default function Navbar() {
             {/* Right Section */}
             <div className="flex items-center gap-4 md:gap-6">
               {/* Desktop Icons */}
-              <div className="hidden md:flex items-center gap-5">
-                <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
-                  <Search className="w-5 h-5 text-white"/>
-                </button>
+                <div className="hidden md:flex items-center gap-5">
+                    <InlineSearch />
 
-                {/* Replace the cart button with proper Link */}
-<Link href="/cart" className="p-2 hover:bg-gray-800 rounded-lg transition-colors relative">
-  <ShoppingCart className="w-5 h-5 text-white"/>
-  {itemCount > 0 && (
-    <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-black text-xs rounded-full flex items-center justify-center">
+                    {/* Replace the cart button with proper Link */}
+                    <Link href="/cart" className="p-2 hover:bg-gray-800 rounded-lg transition-colors relative">
+                        <ShoppingCart className="w-5 h-5 text-white"/>
+                        {itemCount > 0 && (
+                            <span
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-white text-black text-xs rounded-full flex items-center justify-center">
       {itemCount}
     </span>
-  )}
-</Link>
+                        )}
+                    </Link>
 
-                {/* User Menu */}
-                <div className="relative" ref={dropdownRef}>
-                  <button
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-                  >
-                    <User className="w-5 h-5 text-white"/>
-                  </button>
+                    {/* User Menu */}
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                        >
+                            <User className="w-5 h-5 text-white"/>
+                        </button>
 
-                  {/* Dropdown Menu */}
-                  {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
-                      {user ? (
-                        <>
-                          <div className="px-4 py-2 border-b">
-                            <p className="text-sm font-semibold text-gray-900">{user.full_name}</p>
-                            <p className="text-xs text-gray-500">{user.email}</p>
-                          </div>
+                        {/* Dropdown Menu */}
+                        {isUserMenuOpen && (
+                            <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
+                                {user ? (
+                                    <>
+                                        <div className="px-4 py-2 border-b">
+                                            <p className="text-sm font-semibold text-gray-900">{user.full_name}</p>
+                                            <p className="text-xs text-gray-500">{user.email}</p>
+                                        </div>
 
-                          <Link href="/profile" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
-                            <User className="w-4 h-4 mr-3" />
-                            My Profile
-                          </Link>
+                                        <Link href="/profile"
+                                              className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                            <User className="w-4 h-4 mr-3"/>
+                                            My Profile
+                                        </Link>
 
-                          <Link href="/orders" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
-                            <Package className="w-4 h-4 mr-3" />
-                            My Orders
-                          </Link>
+                                        <Link href="/orders"
+                                              className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                            <Package className="w-4 h-4 mr-3"/>
+                                            My Orders
+                                        </Link>
 
-                          <Link href="/settings" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
-                            <Settings className="w-4 h-4 mr-3" />
-                            Settings
-                          </Link>
+                                        <Link href="/settings"
+                                              className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                            <Settings className="w-4 h-4 mr-3"/>
+                                            Settings
+                                        </Link>
 
-                          {user.is_admin && (
-                            <>
-                              <div className="border-t my-2"></div>
-                              <Link href="/admin/dashboard" className="flex items-center px-4 py-2 text-yellow-600 hover:bg-yellow-50">
-                                <Settings className="w-4 h-4 mr-3" />
-                                Admin Dashboard
-                              </Link>
-                            </>
-                          )}
+                                        {user.is_admin && (
+                                            <>
+                                                <div className="border-t my-2"></div>
+                                                <Link href="/admin/dashboard"
+                                                      className="flex items-center px-4 py-2 text-yellow-600 hover:bg-yellow-50">
+                                                    <Settings className="w-4 h-4 mr-3"/>
+                                                    Admin Dashboard
+                                                </Link>
+                                            </>
+                                        )}
 
-                          <div className="border-t my-2"></div>
+                                        <div className="border-t my-2"></div>
 
-                          <button
-                            onClick={handleLogout}
-                            className="flex items-center px-4 py-2 text-red-600 hover:bg-red-50 w-full text-left"
-                          >
-                            <LogOut className="w-4 h-4 mr-3" />
-                            Logout
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <Link href="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                            Login
-                          </Link>
-                          <Link href="/register" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                            Register
-                          </Link>
-                        </>
-                      )}
+                                        <button
+                                            onClick={handleLogout}
+                                            className="flex items-center px-4 py-2 text-red-600 hover:bg-red-50 w-full text-left"
+                                        >
+                                            <LogOut className="w-4 h-4 mr-3"/>
+                                            Logout
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Link href="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                            Login
+                                        </Link>
+                                        <Link href="/register"
+                                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                            Register
+                                        </Link>
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
-                  )}
                 </div>
-              </div>
 
-              {/* Warranty Check - Desktop */}
+                {/* Warranty Check - Desktop */}
               <Link
                 href="/warranty-check"
                 className="hidden md:inline-flex items-center px-4 py-2 bg-white text-black text-sm rounded-lg hover:bg-gray-200 transition-colors"
@@ -188,39 +194,15 @@ export default function Navbar() {
                 Warranty Check
               </Link>
 
-              {/* Mobile Icons */}
+              {/* Mobile Icons - Only Search and Menu */}
               <div className="flex md:hidden items-center gap-3">
-                <button className="p-2">
-                  <Search className="w-5 h-5 text-white" />
-                </button>
+                <InlineSearch />
 
-                <Link href="/cart" className="p-2 relative">
-                  <ShoppingCart className="w-5 h-5 text-white"/>
-                  {itemCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-white text-black text-xs rounded-full flex items-center justify-center">
-                      {itemCount}
-                    </span>
-                  )}
-                </Link>
-
-                {user ? (
-                  <Link href="/profile" className="p-2">
-                    <User className="w-5 h-5 text-white"/>
-                  </Link>
-                ) : (
-                  <Link href="/login" className="p-2">
-                    <User className="w-5 h-5 text-white"/>
-                  </Link>
-                )}
-
-                {/* Mobile Menu Button */}
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className={cn("menu-hamburger md:hidden text-white", isMobileMenuOpen && "active")}
+                  className="p-2"
                 >
-                  <span></span>
-                  <span></span>
-                  <span></span>
+                  <Menu className="w-6 h-6 text-white" />
                 </button>
               </div>
             </div>
@@ -230,6 +212,8 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+
+
     </>
   )
 }

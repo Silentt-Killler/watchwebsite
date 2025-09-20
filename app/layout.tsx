@@ -6,6 +6,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { CartProvider } from '@/contexts/CartContext'
 import { AuthProvider } from '@/contexts/AuthContext'
+import MobileBottomNav from '@/components/layout/MobileBottomNav'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -39,6 +40,7 @@ return (
             <Navbar />
             <main>{children}</main>
             <Footer />
+             <MobileBottomNav />
           </CartProvider>
         </AuthProvider>
       </body>

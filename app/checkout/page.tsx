@@ -23,6 +23,8 @@ export default function CheckoutPage() {
   const { items: cartItems, totalAmount: cartTotal, clearCart } = useCart()
   const [loading, setLoading] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('cod')
+  // Ramadan Discount
+  const [ramadanDiscount, setRamadanDiscount] = useState(0)
 
   // Coupon states
   const [couponCode, setCouponCode] = useState('')
@@ -86,6 +88,23 @@ export default function CheckoutPage() {
     })
   }
 
+  // Apply Ramadan Function
+  // Fetch Ramadan discount
+const fetchRamadanDiscount = async () => {
+  try {
+    const res = await fetch('http://localhost:8000/api/settings/ramadan-discount')
+    if (res.ok) {
+      const data = await res.json()
+      if (data.active) {
+        setRamadanDiscount(data.discount_amount)
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching Ramadan discount:', error)
+  }
+}
+fetchRamadanDiscount()
+
   // Apply Coupon Function
   const applyCoupon = async () => {
     if (!couponCode.trim()) {
@@ -140,8 +159,7 @@ export default function CheckoutPage() {
   }
 
   // Calculate final total
-  const finalTotal = checkoutTotal + shippingCost - discount
-
+  const finalTotal = checkoutTotal + shippingCost - discount - ramadanDiscount
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -421,6 +439,14 @@ export default function CheckoutPage() {
                     {couponMessage}
                   </p>
                 )}
+                {ramadanDiscount > 0 && (
+                  <div className="flex justify-between text-sm text-green-400">
+                    <span>Ramadan Special</span>
+                    <span>-৳{ramadanDiscount}</span>
+                  </div>
+                )}
+
+
               </div>
 
               {/* Price Breakdown */}

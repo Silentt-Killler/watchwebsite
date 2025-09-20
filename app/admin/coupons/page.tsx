@@ -599,6 +599,70 @@ export default function AdminCoupons() {
           </div>
         )}
       </div>
+  {/* Ramadan Flat Discount Section */}
+<div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem', marginTop: '1.5rem' }}>
+  <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+    🌙 Ramadan Special Discount
+  </h2>
+  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+    <input
+      type="number"
+      placeholder="Fixed Amount (৳)"
+      style={{ padding: '0.5rem', backgroundColor: '#1a1d2e', color: 'white', borderRadius: '0.25rem', border: '1px solid #374151' }}
+      id="ramadan-amount"
+    />
+    <input
+      type="text"
+      placeholder="Banner Message (e.g., 🌙 Ramadan Special - ৳500 OFF on All Products! 🌙)"
+      style={{ padding: '0.5rem', backgroundColor: '#1a1d2e', color: 'white', borderRadius: '0.25rem', border: '1px solid #374151' }}
+      id="ramadan-message"
+    />
+  </div>
+  <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+    <button
+      onClick={async () => {
+        const amount = (document.getElementById('ramadan-amount') as HTMLInputElement).value
+        const message = (document.getElementById('ramadan-message') as HTMLInputElement).value
+        const token = localStorage.getItem('token')
+
+        const res = await fetch('http://localhost:8000/api/admin/settings/ramadan-discount', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            discount_amount: Number(amount),
+            message: message,
+            is_active: true
+          })
+        })
+
+        if (res.ok) alert('Ramadan discount activated!')
+      }}
+      style={{ padding: '0.5rem 1rem', backgroundColor: '#10B981', color: 'white', borderRadius: '0.25rem', border: 'none', cursor: 'pointer' }}
+    >
+      Activate Discount
+    </button>
+    <button
+      onClick={async () => {
+        const token = localStorage.getItem('token')
+        await fetch('http://localhost:8000/api/admin/settings/ramadan-discount', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ is_active: false })
+        })
+        alert('Ramadan discount deactivated!')
+      }}
+      style={{ padding: '0.5rem 1rem', backgroundColor: '#EF4444', color: 'white', borderRadius: '0.25rem', border: 'none', cursor: 'pointer' }}
+    >
+      Deactivate
+    </button>
+  </div>
+</div>
     </div>
   )
 }

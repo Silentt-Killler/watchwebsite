@@ -644,6 +644,52 @@ async def get_products(
 
     return products
 
+#search optiom
+
+@app.get("/api/products/search")
+async def search_products(q: str = ""):
+    """Search products by name, brand, category"""
+    if not q or len(q) < 2:
+        return []
+
+    try:
+        # Simple text search
+        search_term = q.lower()
+
+        # Get all active products
+        all_products = await db.products.find({"is_active": True}).to_list(100)
+
+        results = []
+        for product in all_products:
+            # Check if search term matches
+            name = product.get("name", "").lower()
+            brand = product.get("brand", "").lower()
+            description = product.get("description", "").lower()
+            category = product.get("category", "").lower()
+
+            if (search_term in name or
+                    search_term in brand or
+                    search_term in description or
+                    search_term in category):
+                results.append({
+                    "id": str(product["_id"]),
+                    "name": product.get("name", ""),
+                    "price": float(product.get("price", 0)),
+                    "brand": product.get("brand", ""),
+                    "category": product.get("category", ""),
+                    "images": product.get("images", []),
+                    "stock": product.get("stock", 0)
+                })
+
+        return results[:10]  # Return max 10 results
+
+    except Exception as e:
+        print(f"Search error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+
 
 @app.get("/api/products/{product_id}")
 async def get_single_product(product_id: str):
@@ -742,6 +788,38 @@ async def delete_product(
         )
 
     return {"message": "Product deleted successfully"}
+
+
+# Brands endpoint for filter
+@app.get("/api/brands/active")
+async def get_active_brands():
+    """Get all active brands from products"""
+    try:
+        pipeline = [
+            {"$match": {"is_active": True}},
+            {"$group": {"_id": "$brand"}},
+            {"$sort": {"_id": 1}}
+        ]
+
+        brands = await db.products.aggregate(pipeline).to_list(None)
+
+        result = []
+        for brand in brands:
+            if brand["_id"]:
+                result.append({"name": brand["_id"]})
+
+        return result
+    except Exception as e:
+        print(f"Error fetching brands: {str(e)}")
+        return [
+            {"name": "Seiko"},
+            {"name": "Casio"},
+            {"name": "Titan"},
+            {"name": "Citizen"},
+            {"name": "Fossil"}
+        ]
+
+
 
 
 @app.post("/api/cart/add")
@@ -905,6 +983,8 @@ async def remove_from_cart(
     return {"message": "Item removed from cart"}
 
 
+
+
 # UPDATE ORDER CREATION TO INCLUDE COUPON
 @app.post("/api/orders")
 async def create_order(
@@ -992,8 +1072,9 @@ async def get_order(
     order["_id"] = str(order["_id"])
     return order
 
-#admin endpoint
 
+
+#admin endpoint
 
 @app.get("/api/admin/dashboard")
 async def get_admin_dashboard(
@@ -2073,6 +2154,42 @@ async def validate_coupon(
         print(f"Error validating coupon: {str(e)}")
         raise HTTPException(status_code=500, detail="Error validating coupon")
 
+# RAMADAN FLAT DISCOUNT
+
+@app.get("/api/settings/ramadan-discount")
+async def get_ramadan_discount():
+    """Get active Ramadan discount"""
+    discount = await db.settings.find_one({"type": "ramadan_discount", "is_active": True})
+    if discount:
+        return {
+            "active": True,
+            "discount_amount": discount.get("discount_amount", 0),  # Fixed amount
+            "message": discount.get("message", "")
+        }
+    return {"active": False}
+
+
+@app.post("/api/admin/settings/ramadan-discount")
+async def set_ramadan_discount(
+        data: dict,
+        current_user: dict = Depends(get_current_user)
+):
+    """Set Ramadan discount (Admin only)"""
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    await db.settings.update_one(
+        {"type": "ramadan_discount"},
+        {"$set": {
+            "type": "ramadan_discount",
+            "discount_amount": data.get("discount_amount", 0),  # Fixed amount
+            "message": data.get("message", ""),
+            "is_active": data.get("is_active", False),
+            "updated_at": datetime.utcnow()
+        }},
+        upsert=True
+    )
+    return {"message": "Ramadan discount updated"}
 
 
 

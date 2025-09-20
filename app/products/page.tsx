@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import ProductCard from '@/components/products/ProductCard'
 import { Filter } from 'lucide-react'
+import BrandPills from '@/components/products/BrandPills'
+import ProductFilter from '@/components/products/ProductFilter'
 
 interface Product {
   id: string
@@ -26,6 +28,19 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState(categoryParam || 'all')
   const [selectedBrand, setSelectedBrand] = useState(brandParam || 'all')
+interface FilterState {
+  brands: string[]
+  priceRange: { min: number; max: number }
+  priceSort: '' | 'low-to-high' | 'high-to-low'
+  strapMaterial: string[]
+}
+
+const [filterState, setFilterState] = useState<FilterState>({
+  brands: [],
+  priceRange: { min: 0, max: 500000 },
+  priceSort: '',
+  strapMaterial: []
+})
 
   // Mock products data
   const mockProducts: Product[] = [
@@ -106,6 +121,22 @@ export default function ProductsPage() {
     }
   }
 
+  const applyFilters = (products: Product[]) => {
+  let filtered = [...products]
+
+  if (filterState.brands.length > 0) {
+    filtered = filtered.filter(p => filterState.brands.includes(p.brand))
+  }
+
+  if (filterState.priceSort === 'low-to-high') {
+    filtered.sort((a, b) => a.price - b.price)
+  } else if (filterState.priceSort === 'high-to-low') {
+    filtered.sort((a, b) => b.price - a.price)
+  }
+
+  return filtered
+}
+
   const filterProducts = () => {
     let filtered = [...products]
 
@@ -128,101 +159,42 @@ export default function ProductsPage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-light mb-8">
-          {categoryParam ? `${categoryParam.charAt(0).toUpperCase() + categoryParam.slice(1)}'s Watches` :
-           brandParam ? `${brandParam} Watches` : 'All Products'}
-        </h1>
+ return (
+  <div className="min-h-screen bg-black">
+    {/* Brand Pills */}
+    <BrandPills onBrandSelect={(brands) => setFilterState({...filterState, brands})} />
 
-        <div className="flex gap-8">
-          {/* Filters Sidebar */}
-          <aside className="w-64 space-y-6">
-            <div>
-              <h3 className="text-lg font-medium mb-3">Category</h3>
-              <div className="space-y-2">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="category"
-                    value="all"
-                    checked={selectedCategory === 'all'}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="mr-2"
-                  />
-                  All Categories
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="category"
-                    value="men"
-                    checked={selectedCategory === 'men'}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="mr-2"
-                  />
-                  Men
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="category"
-                    value="women"
-                    checked={selectedCategory === 'women'}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="mr-2"
-                  />
-                  Women
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="category"
-                    value="couple"
-                    checked={selectedCategory === 'couple'}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="mr-2"
-                  />
-                  Couple
-                </label>
-              </div>
-            </div>
+    <div className="container-custom py-8">
+      <div className="flex gap-6">
+        {/* Desktop Filter Sidebar */}
+        <div className="hidden lg:block">
+          <ProductFilter onFilterChange={setFilterState} />
+        </div>
 
-            <div>
-              <h3 className="text-lg font-medium mb-3">Brand</h3>
-              <select
-                value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-800 rounded px-3 py-2"
-              >
-                <option value="all">All Brands</option>
-                <option value="Seiko">Seiko</option>
-                <option value="Casio">Casio</option>
-                <option value="Citizen">Citizen</option>
-                <option value="Titan">Titan</option>
-              </select>
-            </div>
-          </aside>
+        {/* Products Grid */}
+        <div className="flex-1">
+          {/* Mobile Filter Button */}
+          <div className="lg:hidden mb-4 flex justify-end">
+            <ProductFilter onFilterChange={setFilterState} isMobile />
+          </div>
 
           {/* Products Grid */}
-          <main className="flex-1">
-            <p className="text-gray-400 mb-4">{filteredProducts.length} products found</p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProducts.map((product) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {loading ? (
+              <div className="col-span-full text-center py-8 text-white">Loading...</div>
+            ) : applyFilters(filteredProducts).length > 0 ? (
+              applyFilters(filteredProducts).map((product) => (
                 <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-
-            {filteredProducts.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-400">No products found matching your filters</p>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8 text-gray-400">
+                No products found
               </div>
             )}
-          </main>
+          </div>
         </div>
       </div>
     </div>
-  )
+  </div>
+)
 }
