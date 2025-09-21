@@ -197,9 +197,11 @@ export default function Navbar() {
 {/* Mobile Icons */}
 <div className="flex md:hidden items-center gap-3">
   <InlineSearch />
+
+  {/* Simple Menu Button */}
   <button
     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-    className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+    className="p-2"
   >
     <Menu className="w-6 h-6 text-white" />
   </button>
