@@ -1,25 +1,22 @@
 'use client'
 
 import { use, useState, useEffect } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { Filter, Grid, List } from 'lucide-react'
 import ProductCard from '@/components/products/ProductCard'
 import BrandPills from '@/components/products/BrandPills'
 import ProductFilter from '@/components/products/ProductFilter'
-
-
 
 interface Product {
   id: string
   name: string
   price: number
+  original_price?: number
   category: string
   brand: string
   images: string[]
   is_featured: boolean
   stock: number
 }
+
 interface FilterState {
   brands: string[]
   priceRange: { min: number; max: number }
@@ -41,88 +38,54 @@ export default function CategoryPage({ params }: PageProps) {
 
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [sortBy, setSortBy] = useState('name')
-  const [showFilters, setShowFilters] = useState(false)
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 100000 })
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([])
-const [filterState, setFilterState] = useState<FilterState>({
-  brands: [],
-  priceRange: { min: 0, max: 500000 },
-  priceSort: '',
-  strapMaterial: []
-})
-
+  const [filterState, setFilterState] = useState<FilterState>({
+    brands: [],
+    priceRange: { min: 0, max: 500000 },
+    priceSort: '',
+    strapMaterial: []
+  })
 
   useEffect(() => {
     fetchProducts()
-  }, [category, sortBy])
+  }, [category])
 
-const fetchProducts = async () => {
-  try {
-    setLoading(true)
+  const fetchProducts = async () => {
+    try {
+      setLoading(true)
+      console.log('Fetching products for category:', category)
 
-    // Debug: Check what category is being used
-    console.log('Fetching products for category:', category)
-
-    const response = await fetch(`http://localhost:8000/api/products?category=${category}`)
-
-    if (response.ok) {
-      const data = await response.json()
-      console.log('Products received:', data)
-      setProducts(data)
-    } else {
-      console.error('Failed to fetch products')
-      setProducts([])
+      const response = await fetch(`http://localhost:8000/api/products`)
+      if (response.ok) {
+        const data = await response.json()
+        // Filter by category on frontend
+        const categoryProducts = data.filter((p: Product) => p.category === category)
+        console.log('Products found:', categoryProducts.length)
+        setProducts(categoryProducts)
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error)
+    } finally {
+      setLoading(false)
     }
-  } catch (error) {
-    console.error('Error fetching products:', error)
-    setProducts([])
-  } finally {
-    setLoading(false)
   }
-}
 
   const applyFilters = (products: Product[]) => {
-  let filtered = [...products]
+    let filtered = [...products]
 
-  // Brand filter from pills
-  if (filterState.brands.length > 0) {
-    filtered = filtered.filter(p => filterState.brands.includes(p.brand))
+    // Brand filter
+    if (filterState.brands.length > 0) {
+      filtered = filtered.filter(p => filterState.brands.includes(p.brand))
+    }
+
+    // Price sort
+    if (filterState.priceSort === 'low-to-high') {
+      filtered.sort((a, b) => a.price - b.price)
+    } else if (filterState.priceSort === 'high-to-low') {
+      filtered.sort((a, b) => b.price - a.price)
+    }
+
+    return filtered
   }
-
-  // Price sort
-  if (filterState.priceSort === 'low-to-high') {
-    filtered.sort((a, b) => a.price - b.price)
-  } else if (filterState.priceSort === 'high-to-low') {
-    filtered.sort((a, b) => b.price - a.price)
-  }
-
-  // Existing brand filter
-  if (selectedBrands.length > 0) {
-    filtered = filtered.filter(p => selectedBrands.includes(p.brand))
-  }
-
-  // Price range
-  filtered = filtered.filter(p => p.price >= priceRange.min && p.price <= priceRange.max)
-
-  return filtered
-}
-  // Filter products based on selected filters
- const filteredProducts = products.filter(product => {
-  if (selectedBrands.length > 0 && !selectedBrands.includes(product.brand)) {
-    return false
-  }
-   {/* price range filter*/}
-  if (product.price < priceRange.min || product.price > priceRange.max) {
-    return false
-  }
-  return true
-})
-
-
-  // Get unique brands from products
-  const availableBrands = Array.from(new Set(products.map(p => p.brand)))
 
   if (loading) {
     return (
@@ -132,43 +95,69 @@ const fetchProducts = async () => {
     )
   }
 
- return (
-  <div className="min-h-screen bg-black">
-    <div className="container-custom py-8">
-      {/* Header - Center aligned */}
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-light text-white capitalize mb-2">
-          {category === 'men' ? "Men's Collection" :
-           category === 'women' ? "Women's Collection" :
-           "Couple Collection"}
-        </h1>
-        <p className="text-gray-400">
-          Premium watches for {category === 'couple' ? 'couples' : category}
-        </p>
-      </div>
-
-      {/* Brand Pills - After Title */}
-      <BrandPills onBrandSelect={(brands) => setFilterState({...filterState, brands})} />
-
-      {/* Main Content */}
-      <div className="flex gap-6 mt-8">
-        {/* Desktop Filter Sidebar */}
-        <div className="hidden lg:block">
-          <ProductFilter onFilterChange={setFilterState} />
+  return (
+    <div className="min-h-screen bg-black">
+      <div className="container-custom py-8">
+        {/* Header - Centered */}
+        <div className="mb-6 text-center">
+          <h1 className="text-4xl font-light text-white mb-2">
+            {category === 'men' ? "Men's Collection" :
+             category === 'women' ? "Women's Collection" :
+             "Couple Collection"}
+          </h1>
+          <p className="text-gray-400">
+            Premium watches for {category === 'couple' ? 'couples' : category}
+          </p>
         </div>
 
-        {/* Products Section */}
-        <div className="flex-1">
-          {/* Mobile Filter */}
-          <div className="lg:hidden mb-4 flex justify-between items-center">
-            <p className="text-white">{applyFilters(products).length} products</p>
-            <ProductFilter onFilterChange={setFilterState} isMobile />
+        {/* Brand Pills */}
+        <div className="mb-8">
+          <BrandPills onBrandSelect={(brands) => setFilterState({...filterState, brands})} />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex gap-6">
+          {/* Desktop Filter */}
+          <div className="hidden lg:block">
+            <ProductFilter onFilterChange={setFilterState} />
           </div>
 
-          {/* Rest of the code remains same */}
+          {/* Products Section */}
+          <div className="flex-1">
+            {/* Mobile Filter */}
+            <div className="lg:hidden mb-4 flex justify-between items-center">
+              <p className="text-white">{applyFilters(products).length} products</p>
+              <ProductFilter onFilterChange={setFilterState} isMobile />
+            </div>
+
+            {/* Products Grid or Coming Soon */}
+            {applyFilters(products).length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                {applyFilters(products).map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="text-center">
+                  <h2 className="text-4xl font-bold text-white mb-4">Coming Soon</h2>
+                  <p className="text-gray-400 text-lg">
+                    {category === 'women' ? "Women's watch collection" :
+                     category === 'couple' ? "Couple watch collection" :
+                     "Men's watch collection"} launching soon!
+                  </p>
+                  <div className="mt-8">
+                    <div className="inline-flex items-center gap-2 px-6 py-3 bg-gray-800 rounded-full">
+                      <span className="text-yellow-500">🚀</span>
+                      <span className="text-white">Launching Soon</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-)
+  )
 }
