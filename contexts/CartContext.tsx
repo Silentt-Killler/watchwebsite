@@ -14,12 +14,12 @@ interface Product {
   id: string
   name: string
   price: number
-  description: string
+  description?: string
   images: string[]
   category: string
-  stock: number
+  stock?: number
+  brand?: string
 }
-
 interface CartContextType {
   items: CartItem[]
   totalAmount: number

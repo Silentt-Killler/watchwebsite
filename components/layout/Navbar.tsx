@@ -194,24 +194,20 @@ export default function Navbar() {
                 Warranty Check
               </Link>
 
-              {/* Mobile Icons - Only Search and Menu */}
-              <div className="flex md:hidden items-center gap-3">
-                <InlineSearch />
-
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="p-2"
-                >
-                  <Menu className="w-6 h-6 text-white" />
-                </button>
-              </div>
+{/* Mobile Icons */}
+<div className="flex md:hidden items-center gap-3">
+  <InlineSearch />
+  <button
+    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+    className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+  >
+    <Menu className="w-6 h-6 text-white" />
+  </button>
+</div>
             </div>
           </div>
         </div>
       </nav>
-
-      {/* Mobile Menu */}
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
 
 
     </>

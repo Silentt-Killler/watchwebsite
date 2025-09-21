@@ -41,16 +41,12 @@ export default function ProductCard({ product }: ProductCardProps) {
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : 0
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault()
-    addToCart({
-      product_id: product.id,
-      product_name: product.name,
-      price: product.price,
-      quantity: 1,
-      image: product.images[0] || '/images/products/placeholder.jpg'
-    })
-  }
+const handleAddToCart = (e: React.MouseEvent) => {
+  e.preventDefault()
+
+  // Call addToCart with the Product object and quantity
+  addToCart(product, 1)
+}
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -90,13 +86,17 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
 
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-            <Link
-              href={`/products/${product.id}`}
-              className="bg-white text-black p-3 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
-            >
-              <Eye className="w-5 h-5" />
-            </Link>
-          </div>
+  <button
+    onClick={(e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      router.push(`/products/${product.id}`)
+    }}
+    className="bg-white text-black p-3 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
+  >
+    <Eye className="w-5 h-5" />
+  </button>
+</div>
         </div>
 
         <div className="p-4 space-y-2">

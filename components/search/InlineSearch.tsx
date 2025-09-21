@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Search as SearchIcon, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 interface Product {
   id: string
@@ -15,17 +16,19 @@ interface Product {
 }
 
 export default function InlineSearch() {
-  const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [results, setResults] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsFocused(false)
       }
     }
 
@@ -34,10 +37,10 @@ export default function InlineSearch() {
   }, [])
 
   useEffect(() => {
-    if (isOpen) {
+    if (isMobileSearchOpen) {
       inputRef.current?.focus()
     }
-  }, [isOpen])
+  }, [isMobileSearchOpen])
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -67,160 +70,108 @@ export default function InlineSearch() {
     }
   }
 
-  const handleProductClick = () => {
-    setIsOpen(false)
-    setSearchTerm('')
-    setResults([])
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchTerm.trim()) {
+      router.push(`/products?search=${encodeURIComponent(searchTerm)}`)
+      setSearchTerm('')
+      setIsFocused(false)
+      setIsMobileSearchOpen(false)
+    }
   }
 
   return (
-    <div ref={searchRef} className="relative">
-      {/* Search Icon Button */}
+    <>
+      {/* Desktop Search Bar */}
+      <div ref={searchRef} className="hidden md:block relative">
+        <form onSubmit={handleSearch} className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            placeholder="Search"
+            className="w-48 lg:w-64 px-4 py-2 pr-20 bg-gray-900 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-white"
+          />
+          <button
+            type="submit"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white hover:bg-gray-200 text-black px-3 py-1 rounded-full text-sm font-medium"
+          >
+            Search
+          </button>
+        </form>
+
+        {/* Desktop Results Dropdown */}
+        {isFocused && searchTerm.length >= 2 && (
+          <div className="absolute top-full mt-2 w-full bg-gray-900 rounded-lg shadow-xl border border-gray-800 z-50 max-h-96 overflow-y-auto">
+            {loading ? (
+              <div className="p-4 text-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto"></div>
+              </div>
+            ) : results.length > 0 ? (
+              <div>
+                {results.map((product) => (
+                  <Link
+                    key={product.id}
+                    href={`/products/${product.id}`}
+                    onClick={() => {
+                      setSearchTerm('')
+                      setIsFocused(false)
+                    }}
+                    className="flex items-center gap-3 p-3 hover:bg-gray-800"
+                  >
+                    <Image
+                      src={product.images?.[0] || '/images/products/placeholder.jpg'}
+                      alt={product.name}
+                      width={40}
+                      height={40}
+                      className="object-cover rounded"
+                    />
+                    <div className="flex-1">
+                      <p className="text-white text-sm line-clamp-1">{product.name}</p>
+                      <p className="text-gray-400 text-xs">{product.brand}</p>
+                    </div>
+                    <p className="text-white font-bold text-sm">৳{product.price.toLocaleString()}</p>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="p-4 text-center text-gray-400">No products found</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Search Icon Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+        onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+        className="md:hidden p-2 hover:bg-gray-800 rounded-lg transition-colors"
       >
         <SearchIcon className="w-5 h-5 text-white" />
       </button>
 
-      {/* Search Dropdown - Different positioning for mobile/desktop */}
-      {isOpen && (
-        <>
-          {/* Mobile Version - Centered */}
-          <div className="md:hidden fixed left-1/2 -translate-x-1/2 top-20 w-[90vw] bg-gray-900 rounded-lg shadow-xl border border-gray-800 z-50">
-            {/* Search Input */}
-            <div className="p-3 border-b border-gray-800">
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full pl-10 pr-10 py-2 bg-black text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-white text-sm"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => {
-                      setSearchTerm('')
-                      setResults([])
-                    }}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                  >
-                    <X className="w-4 h-4 text-gray-400 hover:text-white" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Results for Mobile */}
-            <div className="max-h-[50vh] overflow-y-auto">
-              {renderResults()}
-            </div>
-          </div>
-
-          {/* Desktop Version - Right aligned */}
-          <div className="hidden md:block absolute right-0 top-full mt-2 w-[400px] bg-gray-900 rounded-lg shadow-xl border border-gray-800 z-50">
-            {/* Search Input */}
-            <div className="p-4 border-b border-gray-800">
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full pl-10 pr-10 py-2 bg-black text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white"
-                />
-                {searchTerm && (
-                  <button
-                    onClick={() => {
-                      setSearchTerm('')
-                      setResults([])
-                    }}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                  >
-                    <X className="w-4 h-4 text-gray-400 hover:text-white" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Results for Desktop */}
-            <div className="max-h-[400px] overflow-y-auto">
-              {renderResults()}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  )
-
-  function renderResults() {
-    if (loading) {
-      return (
-        <div className="p-8 text-center">
-          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-        </div>
-      )
-    }
-
-    if (!loading && results.length > 0) {
-      return (
-        <div className="p-2">
-          {results.map((product) => (
-            <Link
-              key={product.id}
-              href={`/products/${product.id}`}
-              onClick={handleProductClick}
-              className="flex items-center gap-3 p-2 hover:bg-gray-800 rounded-lg transition-colors"
+      {/* Mobile Search Bar - Shows when icon clicked */}
+      {isMobileSearchOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-black border-t border-gray-800 p-3 z-50">
+          <form onSubmit={handleSearch} className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search products..."
+              className="w-full px-4 py-2 pr-10 bg-gray-900 text-white rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-white"
+            />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5"
             >
-              <Image
-                src={product.images?.[0] || '/images/products/placeholder.jpg'}
-                alt={product.name}
-                width={50}
-                height={50}
-                className="object-cover rounded"
-              />
-              <div className="flex-1">
-                <p className="text-white text-sm font-medium line-clamp-1">{product.name}</p>
-                <p className="text-gray-400 text-xs">{product.brand}</p>
-                <p className="text-white font-bold text-sm">৳{product.price.toLocaleString()}</p>
-              </div>
-            </Link>
-          ))}
-          {results.length > 0 && (
-            <div className="p-3 border-t border-gray-800">
-              <Link
-                href={`/products?search=${searchTerm}`}
-                onClick={handleProductClick}
-                className="block text-center text-sm text-white hover:text-gray-300"
-              >
-                View all results →
-              </Link>
-            </div>
-          )}
+              <SearchIcon className="w-4 h-4 text-white" />
+            </button>
+          </form>
         </div>
-      )
-    }
-
-    if (!loading && searchTerm.length >= 2 && results.length === 0) {
-      return (
-        <div className="p-8 text-center">
-          <p className="text-gray-400">No products found</p>
-        </div>
-      )
-    }
-
-    if (!loading && searchTerm.length === 0) {
-      return (
-        <div className="p-6">
-          <p className="text-gray-400 text-sm text-center">Type to search products</p>
-        </div>
-      )
-    }
-
-    return null
-  }
+      )}
+    </>
+  )
 }
