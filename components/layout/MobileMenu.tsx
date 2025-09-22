@@ -34,15 +34,15 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
       />
 
       {/* Menu Panel */}
-      <div className="fixed right-0 top-0 h-full w-[80%] max-w-sm bg-black border-l border-gray-800 z-50 shadow-2xl md:hidden">
+      <div className="fixed right-0 top-0 h-full w-[80%] max-w-sm bg-white z-50 shadow-2xl md:hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 className="text-xl font-medium text-white">Menu</h2>
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-medium">Menu</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -54,7 +54,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 <Link
                   href={item.href}
                   onClick={onClose}
-                  className="text-lg font-medium text-white hover:text-gray-300 transition-colors block"
+                  className="text-lg font-medium text-black hover:text-gray-600 transition-colors block"
                 >
                   {item.label}
                 </Link>
@@ -63,11 +63,11 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           </ul>
 
           {/* Warranty Check */}
-          <div className="mt-8 pt-8 border-t border-gray-700">
+          <div className="mt-8 pt-8 border-t">
             <Link
               href="/warranty-check"
               onClick={onClose}
-              className="inline-flex items-center px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-200 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
             >
               Warranty Check
             </Link>
