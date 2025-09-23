@@ -32,7 +32,7 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -162,33 +162,21 @@ class ProductResponse(BaseModel):
     name: str
     description: str
     price: float
-    original_price: Optional[float]
+    original_price: Optional[float] = None  # Make it optional
     category: str
     brand: str
     stock: int
-    images: list[str]
-    model: Optional[str]
-    movement: Optional[str]
-    case_size: Optional[str]
-    water_resistance: Optional[str]
-    warranty: Optional[str]
+    images: List[str]
     is_featured: bool
     is_active: bool
     created_at: datetime
+    model: Optional[str] = None
+    movement: Optional[str] = None
+    case_size: Optional[str] = None
+    water_resistance: Optional[str] = None
+    warranty: Optional[str] = None
+    specifications: Optional[dict] = None
 
-
-class ProductResponse(BaseModel):
-    id: str
-    name: str
-    description: str
-    price: float
-    category: str
-    brand: str
-    stock: int
-    images: list[str]
-    is_featured: bool
-    is_active: bool
-    created_at: datetime
 
 
 class CartItem(BaseModel):

@@ -1,491 +1,170 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useCart } from '@/contexts/CartContext'
-import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import Link from 'next/link'
-import { Tag, X } from 'lucide-react'
+import { use, useState, useEffect } from 'react'
+import ProductCard from '@/components/products/ProductCard'
+import BrandPills from '@/components/products/BrandPills'
+import ProductFilter from '@/components/products/ProductFilter'
 
-interface ShippingForm {
-  full_name: string
-  phone: string
-  email: string
-  address_line1: string
-  address_line2: string
-  city: string
-  district: string
-  postal_code: string
+interface Product {
+  id: string
+  name: string
+  price: number
+  original_price?: number
+  category: string
+  brand: string
+  images: string[]
+  is_featured: boolean
+  stock: number
 }
 
-export default function CheckoutPage() {
-  const router = useRouter()
-  const { items: cartItems, totalAmount: cartTotal, clearCart } = useCart()
-  const [loading, setLoading] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState('cod')
-  // Ramadan Discount
-  const [ramadanDiscount, setRamadanDiscount] = useState(0)
+interface FilterState {
+  brands: string[]
+  priceRange: { min: number; max: number }
+  priceSort: '' | 'low-to-high' | 'high-to-low'
+  strapMaterial: string[]
+}
 
-  // Coupon states
-  const [couponCode, setCouponCode] = useState('')
-  const [discount, setDiscount] = useState(0)
-  const [couponMessage, setCouponMessage] = useState('')
-  const [couponApplied, setCouponApplied] = useState(false)
-  const [applyingCoupon, setApplyingCoupon] = useState(false)
+interface PageProps {
+  params: Promise<{ category: string }>
+}
 
-  interface CheckoutItem {
-    product_id: string
-    product_name: string
-    price: number
-    quantity: number
-    image: string
-  }
+export default function CategoryPage({ params }: PageProps) {
+  const resolvedParams = use(params)
+  const rawCategory = resolvedParams.category
 
-  const [checkoutItems, setCheckoutItems] = useState<CheckoutItem[]>([])
-  const [checkoutTotal, setCheckoutTotal] = useState(0)
-  const [isBuyNow, setIsBuyNow] = useState(false)
-  const shippingCost = 100
+  // Validate category
+  const validCategories = ['men', 'women', 'couple']
+  const category = validCategories.includes(rawCategory) ? rawCategory : 'men'
 
-  const [shippingForm, setShippingForm] = useState<ShippingForm>({
-    full_name: '',
-    phone: '',
-    email: '',
-    address_line1: '',
-    address_line2: '',
-    city: '',
-    district: '',
-    postal_code: ''
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filterState, setFilterState] = useState<FilterState>({
+    brands: [],
+    priceRange: { min: 0, max: 500000 },
+    priceSort: '',
+    strapMaterial: []
   })
 
   useEffect(() => {
-    // Check for buy-now data
-    const buyNowData = sessionStorage.getItem('buyNowData')
-    if (buyNowData) {
-      const data = JSON.parse(buyNowData)
-      setCheckoutItems(data.items)
-      setCheckoutTotal(data.total)
-      setIsBuyNow(true)
-      sessionStorage.removeItem('buyNowData')
-    } else {
-      // Use cart items
-      setCheckoutItems(cartItems)
-      setCheckoutTotal(cartTotal)
-      setIsBuyNow(false)
-    }
+    fetchProducts()
+  }, [category])
 
-    // Get user info from token if available
-    const token = localStorage.getItem('token')
-    if (!token) {
-      alert('Please login to continue')
-      router.push('/login')
-    }
-  }, [cartItems, cartTotal, router])
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setShippingForm({
-      ...shippingForm,
-      [e.target.name]: e.target.value
-    })
-  }
-
-  // Apply Ramadan Function
-  // Fetch Ramadan discount
-const fetchRamadanDiscount = async () => {
+const fetchProducts = async () => {
   try {
-    const res = await fetch('http://localhost:8000/api/settings/ramadan-discount')
-    if (res.ok) {
-      const data = await res.json()
-      if (data.active) {
-        setRamadanDiscount(data.discount_amount)
-      }
+    setLoading(true)
+    console.log('Fetching products for category:', category)
+
+    // Add error handling
+    const response = await fetch(`http://localhost:8000/api/products`)
+    .catch(err => {
+      console.error('Network error:', err)
+      return null
+    })
+
+    if (response && response.ok) {
+      const data = await response.json()
+      // Filter by category on frontend
+      const categoryProducts = data.filter((p: Product) => p.category === category)
+      console.log('Products found:', categoryProducts.length)
+      setProducts(categoryProducts)
+    } else {
+      console.error('Failed to fetch products')
+      setProducts([])
     }
   } catch (error) {
-    console.error('Error fetching Ramadan discount:', error)
+    console.error('Error fetching products:', error)
+    setProducts([])
+  } finally {
+    setLoading(false)
   }
 }
-fetchRamadanDiscount()
 
-  // Apply Coupon Function
-  const applyCoupon = async () => {
-    if (!couponCode.trim()) {
-      setCouponMessage('Please enter a coupon code')
-      return
+  const applyFilters = (products: Product[]) => {
+    let filtered = [...products]
+
+    // Brand filter
+    if (filterState.brands.length > 0) {
+      filtered = filtered.filter(p => filterState.brands.includes(p.brand))
     }
 
-    setApplyingCoupon(true)
-    setCouponMessage('')
-
-    const token = localStorage.getItem('token')
-    try {
-      const res = await fetch('http://localhost:8000/api/coupons/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          code: couponCode.toUpperCase(),
-          order_amount: checkoutTotal
-        })
-      })
-
-      const data = await res.json()
-
-      if (res.ok) {
-        setDiscount(data.discount_amount)
-        setCouponMessage(data.message || `Coupon applied! You saved ৳${data.discount_amount}`)
-        setCouponApplied(true)
-      } else {
-        setCouponMessage(data.detail || 'Invalid coupon code')
-        setDiscount(0)
-        setCouponApplied(false)
-      }
-    } catch (error) {
-      console.error('Error applying coupon:', error)
-      setCouponMessage('Failed to apply coupon')
-      setDiscount(0)
-      setCouponApplied(false)
-    } finally {
-      setApplyingCoupon(false)
+    // Price sort
+    if (filterState.priceSort === 'low-to-high') {
+      filtered.sort((a, b) => a.price - b.price)
+    } else if (filterState.priceSort === 'high-to-low') {
+      filtered.sort((a, b) => b.price - a.price)
     }
+
+    return filtered
   }
 
-  // Remove Coupon
-  const removeCoupon = () => {
-    setCouponCode('')
-    setDiscount(0)
-    setCouponMessage('')
-    setCouponApplied(false)
-  }
-
-  // Calculate final total
-  const finalTotal = checkoutTotal + shippingCost - discount - ramadanDiscount
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
-    try {
-      const token = localStorage.getItem('token')
-      const orderData = {
-        shipping_address: shippingForm,
-        payment_method: paymentMethod,
-        items: checkoutItems,
-        subtotal: checkoutTotal,
-        shipping_cost: shippingCost,
-        coupon_code: couponApplied ? couponCode : null,
-        discount_amount: discount,
-        total_amount: finalTotal,
-        notes: isBuyNow ? 'Buy Now Order' : 'Cart Order'
-      }
-
-      const response = await fetch('http://localhost:8000/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(orderData)
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-
-        // Clear cart if it's not buy-now
-        if (!isBuyNow) {
-          clearCart()
-        }
-
-        // Redirect to success page
-        router.push(`/order-success?order_id=${result.order_id}`)
-      } else {
-        alert('Failed to place order')
-      }
-    } catch (error) {
-      console.error('Error placing order:', error)
-      alert('Something went wrong')
-    } finally {
-      setLoading(false)
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-black py-8">
-      <div className="container-custom">
-        <h1 className="text-3xl font-light text-white mb-8">Checkout</h1>
+    <div className="min-h-screen bg-black">
+      <div className="container-custom py-8">
+        {/* Header - Centered */}
+        <div className="mb-6 text-center">
+          <h1 className="text-4xl font-light text-white mb-2">
+            {category === 'men' ? "Men's Collection" :
+             category === 'women' ? "Women's Collection" :
+             "Couple Collection"}
+          </h1>
+          <p className="text-gray-400">
+            Premium watches for {category === 'couple' ? 'couples' : category}
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Shipping Form */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="bg-gray-900 rounded-lg shadow-lg border border-gray-800 p-6">
-              <h2 className="text-xl font-light text-white mb-6">Shipping Information</h2>
+        {/* Brand Pills */}
+        <div className="mb-8">
+          <BrandPills onBrandSelect={(brands) => setFilterState({...filterState, brands})} />
+        </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-light text-gray-300 mb-1">
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="full_name"
-                    value={shippingForm.full_name}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 bg-black border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-light text-gray-300 mb-1">
-                    Phone *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={shippingForm.phone}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 bg-black border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-light text-gray-300 mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={shippingForm.email}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 bg-black border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-light text-gray-300 mb-1">
-                    Address Line 1 *
-                  </label>
-                  <input
-                    type="text"
-                    name="address_line1"
-                    value={shippingForm.address_line1}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 bg-black border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-light text-gray-300 mb-1">
-                    Address Line 2
-                  </label>
-                  <input
-                    type="text"
-                    name="address_line2"
-                    value={shippingForm.address_line2}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-black border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-light text-gray-300 mb-1">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={shippingForm.city}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 bg-black border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-light text-gray-300 mb-1">
-                    District *
-                  </label>
-                  <input
-                    type="text"
-                    name="district"
-                    value={shippingForm.district}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 bg-black border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-light text-gray-300 mb-1">
-                    Postal Code
-                  </label>
-                  <input
-                    type="text"
-                    name="postal_code"
-                    value={shippingForm.postal_code}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-black border border-gray-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white focus:border-white"
-                  />
-                </div>
-              </div>
-
-              {/* Payment Method */}
-              <div className="mt-6">
-                <h3 className="text-lg font-light text-white mb-3">Payment Method</h3>
-                <div className="space-y-2">
-                  <label className="flex items-center text-gray-300">
-                    <input
-                      type="radio"
-                      name="payment_method"
-                      value="cod"
-                      checked={paymentMethod === 'cod'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="mr-2"
-                    />
-                    Cash on Delivery
-                  </label>
-                  <label className="flex items-center text-gray-300">
-                    <input
-                      type="radio"
-                      name="payment_method"
-                      value="online"
-                      checked={paymentMethod === 'online'}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="mr-2"
-                      disabled
-                    />
-                    Online Payment (Coming Soon)
-                  </label>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || checkoutItems.length === 0}
-                className="w-full mt-6 bg-white text-black py-3 rounded-lg hover:bg-gray-200 transition-colors disabled:bg-gray-600 disabled:text-gray-400 font-medium"
-              >
-                {loading ? 'Processing...' : 'Place Order'}
-              </button>
-            </form>
+        {/* Main Content */}
+        <div className="flex gap-6">
+          {/* Desktop Filter */}
+          <div className="hidden lg:block">
+            <ProductFilter onFilterChange={setFilterState} />
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-gray-900 rounded-lg shadow-lg border border-gray-800 p-6 sticky top-4">
-              <h2 className="text-xl font-light text-white mb-4">Order Summary</h2>
+          {/* Products Section */}
+          <div className="flex-1">
+            {/* Mobile Filter */}
+            <div className="lg:hidden mb-4 flex justify-between items-center">
+              <p className="text-white">{applyFilters(products).length} products</p>
+              <ProductFilter onFilterChange={setFilterState} isMobile />
+            </div>
 
-              {/* Items */}
-              <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                {checkoutItems.map((item, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <Image
-                      src={item.image || '/images/products/placeholder.jpg'}
-                      alt={item.product_name}
-                      width={48}
-                      height={48}
-                      className="object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm font-light text-white">{item.product_name}</p>
-                      <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="text-sm font-light text-white">৳{item.price * item.quantity}</p>
-                  </div>
+            {/* Products Grid or Coming Soon */}
+            {applyFilters(products).length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                {applyFilters(products).map((product) => (
+                  <ProductCard key={product.id} product={product} />
                 ))}
               </div>
-
-              {/* Coupon Section */}
-              <div className="border-t border-gray-800 pt-4 mb-4">
-                <label className="block text-sm font-light text-gray-300 mb-2">
-                  <Tag className="inline w-4 h-4 mr-1" />
-                  Have a coupon code?
-                </label>
-                {!couponApplied ? (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      placeholder="Enter code"
-                      className="flex-1 px-3 py-2 bg-black border border-gray-700 text-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-white placeholder-gray-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={applyCoupon}
-                      disabled={applyingCoupon}
-                      className="px-4 py-2 bg-white text-black rounded-md text-sm hover:bg-gray-200 disabled:bg-gray-600 disabled:text-gray-400"
-                    >
-                      {applyingCoupon ? '...' : 'Apply'}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between bg-green-900/30 border border-green-800 p-2 rounded">
-                    <span className="text-sm text-green-400">
-                      {couponCode} applied
-                    </span>
-                    <button
-                      type="button"
-                      onClick={removeCoupon}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-                {couponMessage && (
-                  <p className={`text-xs mt-2 ${couponApplied ? 'text-green-400' : 'text-red-400'}`}>
-                    {couponMessage}
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="text-center">
+                  <h2 className="text-4xl font-bold text-white mb-4">Coming Soon</h2>
+                  <p className="text-gray-400 text-lg">
+                    {category === 'women' ? "Women's watch collection" :
+                     category === 'couple' ? "Couple watch collection" :
+                     "Men's watch collection"} launching soon!
                   </p>
-                )}
-                {ramadanDiscount > 0 && (
-                  <div className="flex justify-between text-sm text-green-400">
-                    <span>Ramadan Special</span>
-                    <span>-৳{ramadanDiscount}</span>
+                  <div className="mt-8">
+                    <div className="inline-flex items-center gap-2 px-6 py-3 bg-gray-800 rounded-full">
+                      <span className="text-yellow-500">🚀</span>
+                      <span className="text-white">Launching Soon</span>
+                    </div>
                   </div>
-                )}
-
-
-              </div>
-
-              {/* Price Breakdown */}
-              <div className="border-t border-gray-800 pt-4 space-y-2">
-                <div className="flex justify-between text-sm text-gray-300">
-                  <span>Subtotal</span>
-                  <span>৳{checkoutTotal}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-300">
-                  <span>Shipping</span>
-                  <span>৳{shippingCost}</span>
-                </div>
-                {discount > 0 && (
-                  <div className="flex justify-between text-sm text-green-400">
-                    <span>Discount</span>
-                    <span>-৳{discount}</span>
-                  </div>
-                )}
-                <div className="flex justify-between font-medium text-lg pt-2 border-t border-gray-800 text-white">
-                  <span>Total</span>
-                  <span>৳{finalTotal}</span>
                 </div>
               </div>
-
-              {/* Security & Trust Badges */}
-              <div className="mt-6 pt-4 border-t border-gray-800">
-                <div className="space-y-2 text-xs text-gray-400">
-                  <p className="flex items-center gap-1">
-                    ✓ 100% Secure Checkout
-                  </p>
-                  <p className="flex items-center gap-1">
-                    ✓ Free Shipping on All Orders
-                  </p>
-                  <p className="flex items-center gap-1">
-                    ✓ 2 Years Warranty
-                  </p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

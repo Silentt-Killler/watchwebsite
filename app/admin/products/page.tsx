@@ -28,19 +28,39 @@ export default function AdminProducts() {
     fetchProducts()
   }, [])
 
-  const fetchProducts = async () => {
-    try {
-      const res = await fetch('http://localhost:8000/api/products')
-      if (res.ok) {
-        const data = await res.json()
-        setProducts(data)
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error)
-    } finally {
+const fetchProducts = async () => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      console.error('No token found')
       setLoading(false)
+      return
     }
+
+    const res = await fetch('http://localhost:8000/api/products', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }).catch(err => {
+      console.error('Network error:', err)
+      return null
+    })
+
+    if (res && res.ok) {
+      const data = await res.json()
+      setProducts(data)
+    } else {
+      console.error('Failed to fetch products')
+      setProducts([])
+    }
+  } catch (error) {
+    console.error('Error fetching products:', error)
+    setProducts([])
+  } finally {
+    setLoading(false)
   }
+}
 
   const deleteProduct = async (id: string) => {
     if (!confirm('Delete this product?')) return
