@@ -1,132 +1,115 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Upload, Plus, X } from 'lucide-react'
+import { ArrowLeft, Plus, X, Save } from 'lucide-react'
 import Link from 'next/link'
 
-interface Brand {
-  id: string
-  name: string
-  slug: string
-}
-
-export default function AddProduct() {
+export default function AddProductPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [brands, setBrands] = useState<Brand[]>([])
+  const [images, setImages] = useState<string[]>([''])
 
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: '',
+    price: 0,
+    original_price: 0,
     category: 'men',
+    stock: 0,
     brand: '',
-    stock: '',
-    images: [''],
     is_featured: false,
     is_active: true,
-    specifications: {
-      movement: '',
-      case_material: '',
-      case_size: '',
-      water_resistance: '',
-      strap_material: '',
-      dial_color: ''
-    }
+    // Specifications
+    series: '',
+    gender: '',
+    model: '',
+    brand_origin: '',
+    upc: '',
+    case_size: '',
+    case_thickness: '',
+    lug_to_lug: '',
+    case_material: '',
+    case_color: '',
+    case_back: '',
+    case_shape: '',
+    dial_color: '',
+    crystal: '',
+    crystal_coating: '',
+    crown: '',
+    bezel: '',
+    bezel_color: '',
+    bezel_material: '',
+    lumibrite: '',
+    movement: '',
+    movement_source: '',
+    engine: '',
+    jewels: '',
+    power_reserve: '',
+    magnetic_resistance: '',
+    band_material: '',
+    band_type: '',
+    band_width: '',
+    band_color: '',
+    clasp: '',
+    water_resistance: '',
+    functions: '',
+    calendar: '',
+    watch_style: '',
+    weight: '',
+    warranty: '',
+    also_known_as: ''
   })
 
-  useEffect(() => {
-    fetchBrands()
-  }, [])
-
-  const fetchBrands = async () => {
-    try {
-      const res = await fetch('http://localhost:8000/api/brands?is_active=true')
-      if (res.ok) {
-        const data = await res.json()
-        setBrands(data)
-      }
-    } catch (error) {
-      console.error('Error fetching brands:', error)
-    }
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target
-
-    if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked
-      setFormData(prev => ({
-        ...prev,
-        [name]: checked
-      }))
-    } else if (name.startsWith('specifications.')) {
-      const specField = name.split('.')[1]
-      setFormData(prev => ({
-        ...prev,
-        specifications: {
-          ...prev.specifications,
-          [specField]: value
-        }
-      }))
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }))
-    }
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
   const handleImageChange = (index: number, value: string) => {
-    const newImages = [...formData.images]
+    const newImages = [...images]
     newImages[index] = value
-    setFormData(prev => ({ ...prev, images: newImages }))
+    setImages(newImages)
   }
 
   const addImageField = () => {
-    setFormData(prev => ({ ...prev, images: [...prev.images, ''] }))
+    setImages([...images, ''])
   }
 
   const removeImageField = (index: number) => {
-    const newImages = formData.images.filter((_, i) => i !== index)
-    setFormData(prev => ({ ...prev, images: newImages }))
+    if (images.length > 1) {
+      setImages(images.filter((_, i) => i !== index))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    const token = localStorage.getItem('token')
-    if (!token) {
-      alert('Please login')
-      router.push('/login')
-      return
-    }
-
     try {
-      const productData = {
+      const token = localStorage.getItem('token')
+
+      const submitData = {
         ...formData,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        images: formData.images.filter(img => img !== '')
+        images: images.filter(img => img !== '')
       }
 
-      const res = await fetch('http://localhost:8000/api/products', {
+      const res = await fetch(`http://localhost:8000/api/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(productData)
+        body: JSON.stringify(submitData)
       })
 
       if (res.ok) {
         alert('Product added successfully!')
         router.push('/admin/products')
       } else {
-        const error = await res.json()
-        alert(error.detail || 'Failed to add product')
+        alert('Failed to add product')
       }
     } catch (error) {
       console.error('Error adding product:', error)
@@ -138,379 +121,387 @@ export default function AddProduct() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#1a1d2e', padding: '1.5rem' }}>
-      <div style={{ maxWidth: '1024px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-          <Link href="/admin/products">
-            <ArrowLeft style={{ width: '1.5rem', height: '1.5rem', color: 'white', cursor: 'pointer' }} />
-          </Link>
-          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white' }}>Add New Product</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Link href="/admin/products">
+              <ArrowLeft style={{ width: '1.5rem', height: '1.5rem', color: 'white', cursor: 'pointer' }} />
+            </Link>
+            <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white', margin: 0 }}>Add New Product</h1>
+          </div>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit}>
-          <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
-              Basic Information
-            </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
+            {/* Main Content */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Basic Information */}
+              <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem' }}>
+                <h2 style={{ color: 'white', fontSize: '1.25rem', marginBottom: '1.5rem' }}>Basic Information</h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-              {/* Product Name */}
-              <div>
-                <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  Product Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    backgroundColor: '#1a1d2e',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: 'white'
-                  }}
-                  placeholder="e.g. Seiko Presage Automatic"
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                      Product Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      style={{ width: '100%', padding: '0.75rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                      Description *
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      rows={4}
+                      style={{ width: '100%', padding: '0.75rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white', resize: 'vertical' }}
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        Price (৳) *
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.price}
+                        onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
+                        style={{ width: '100%', padding: '0.75rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        Original Price (৳)
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.original_price}
+                        onChange={(e) => handleInputChange('original_price', parseFloat(e.target.value))}
+                        style={{ width: '100%', padding: '0.75rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        Category *
+                      </label>
+                      <select
+                        value={formData.category}
+                        onChange={(e) => handleInputChange('category', e.target.value)}
+                        style={{ width: '100%', padding: '0.75rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                        required
+                      >
+                        <option value="men">Men</option>
+                        <option value="women">Women</option>
+                        <option value="unisex">Unisex</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        Stock *
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.stock}
+                        onChange={(e) => handleInputChange('stock', parseInt(e.target.value))}
+                        style={{ width: '100%', padding: '0.75rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        Brand *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.brand}
+                        onChange={(e) => handleInputChange('brand', e.target.value)}
+                        style={{ width: '100%', padding: '0.75rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Category */}
-              <div>
-                <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  Category *
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    backgroundColor: '#1a1d2e',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: 'white'
-                  }}
-                >
-                  <option value="men">Men</option>
-                  <option value="women">Women</option>
-                  <option value="couple">Couple</option>
-                </select>
-              </div>
-
-              {/* Brand */}
-              <div>
-                <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  Brand *
-                </label>
-                <select
-                  name="brand"
-                  value={formData.brand}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    backgroundColor: '#1a1d2e',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: 'white'
-                  }}
-                >
-                  <option value="">Select Brand</option>
-                  {brands.map(brand => (
-                    <option key={brand.id} value={brand.slug}>
-                      {brand.name}
-                    </option>
+              {/* Item Specifications */}
+              <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem' }}>
+                <h2 style={{ color: 'white', fontSize: '1.25rem', marginBottom: '1.5rem' }}>Item Specifications (Optional)</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {[
+                    { key: 'series', label: 'Series' },
+                    { key: 'gender', label: 'Gender' },
+                    { key: 'model', label: 'Model' },
+                    { key: 'brand_origin', label: 'Brand Origin' },
+                    { key: 'upc', label: 'UPC' },
+                    { key: 'also_known_as', label: 'Also Known As' }
+                  ].map(field => (
+                    <div key={field.key}>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        {field.label}
+                      </label>
+                      <input
+                        type="text"
+                        value={(formData as any)[field.key] || ''}
+                        onChange={(e) => handleInputChange(field.key, e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                      />
+                    </div>
                   ))}
-                </select>
+                </div>
               </div>
 
-              {/* Price */}
-              <div>
-                <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  Price (৳) *
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  step="0.01"
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    backgroundColor: '#1a1d2e',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: 'white'
-                  }}
-                  placeholder="e.g. 15000"
-                />
+              {/* Case Specifications */}
+              <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem' }}>
+                <h2 style={{ color: 'white', fontSize: '1.25rem', marginBottom: '1.5rem' }}>Case Specifications (Optional)</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {[
+                    { key: 'case_size', label: 'Case Size' },
+                    { key: 'case_thickness', label: 'Case Thickness' },
+                    { key: 'lug_to_lug', label: 'Lug to Lug' },
+                    { key: 'case_material', label: 'Case Material' },
+                    { key: 'case_color', label: 'Case Color' },
+                    { key: 'case_back', label: 'Case Back' },
+                    { key: 'case_shape', label: 'Case Shape' },
+                    { key: 'bezel', label: 'Bezel' },
+                    { key: 'bezel_color', label: 'Bezel Color' },
+                    { key: 'bezel_material', label: 'Bezel Material' }
+                  ].map(field => (
+                    <div key={field.key}>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        {field.label}
+                      </label>
+                      <input
+                        type="text"
+                        value={(formData as any)[field.key] || ''}
+                        onChange={(e) => handleInputChange(field.key, e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Stock */}
-              <div>
-                <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  Stock Quantity *
-                </label>
-                <input
-                  type="number"
-                  name="stock"
-                  value={formData.stock}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    backgroundColor: '#1a1d2e',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: 'white'
-                  }}
-                  placeholder="e.g. 50"
-                />
+              {/* Dial & Crystal */}
+              <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem' }}>
+                <h2 style={{ color: 'white', fontSize: '1.25rem', marginBottom: '1.5rem' }}>Dial & Crystal (Optional)</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {[
+                    { key: 'dial_color', label: 'Dial Color' },
+                    { key: 'crystal', label: 'Crystal' },
+                    { key: 'crystal_coating', label: 'Crystal Coating' },
+                    { key: 'crown', label: 'Crown' },
+                    { key: 'lumibrite', label: 'LumiBrite' }
+                  ].map(field => (
+                    <div key={field.key}>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        {field.label}
+                      </label>
+                      <input
+                        type="text"
+                        value={(formData as any)[field.key] || ''}
+                        onChange={(e) => handleInputChange(field.key, e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Movement */}
+              <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem' }}>
+                <h2 style={{ color: 'white', fontSize: '1.25rem', marginBottom: '1.5rem' }}>Movement (Optional)</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {[
+                    { key: 'movement', label: 'Movement' },
+                    { key: 'movement_source', label: 'Movement Source' },
+                    { key: 'engine', label: 'Engine' },
+                    { key: 'jewels', label: 'Jewels' },
+                    { key: 'power_reserve', label: 'Power Reserve' },
+                    { key: 'magnetic_resistance', label: 'Magnetic Resistance' }
+                  ].map(field => (
+                    <div key={field.key}>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        {field.label}
+                      </label>
+                      <input
+                        type="text"
+                        value={(formData as any)[field.key] || ''}
+                        onChange={(e) => handleInputChange(field.key, e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Band */}
+              <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem' }}>
+                <h2 style={{ color: 'white', fontSize: '1.25rem', marginBottom: '1.5rem' }}>Band (Optional)</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {[
+                    { key: 'band_material', label: 'Band Material' },
+                    { key: 'band_type', label: 'Band Type' },
+                    { key: 'band_width', label: 'Band Width' },
+                    { key: 'band_color', label: 'Band Color' },
+                    { key: 'clasp', label: 'Clasp' }
+                  ].map(field => (
+                    <div key={field.key}>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        {field.label}
+                      </label>
+                      <input
+                        type="text"
+                        value={(formData as any)[field.key] || ''}
+                        onChange={(e) => handleInputChange(field.key, e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem' }}>
+                <h2 style={{ color: 'white', fontSize: '1.25rem', marginBottom: '1.5rem' }}>Additional Information (Optional)</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {[
+                    { key: 'water_resistance', label: 'Water Resistance' },
+                    { key: 'functions', label: 'Functions' },
+                    { key: 'calendar', label: 'Calendar' },
+                    { key: 'watch_style', label: 'Watch Style' },
+                    { key: 'weight', label: 'Weight' },
+                    { key: 'warranty', label: 'Warranty' }
+                  ].map(field => (
+                    <div key={field.key}>
+                      <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        {field.label}
+                      </label>
+                      <input
+                        type="text"
+                        value={(formData as any)[field.key] || ''}
+                        onChange={(e) => handleInputChange(field.key, e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Description */}
-            <div style={{ marginTop: '1rem' }}>
-              <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                Description *
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                required
-                rows={4}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  backgroundColor: '#1a1d2e',
-                  border: '1px solid #374151',
-                  borderRadius: '0.5rem',
-                  color: 'white'
-                }}
-                placeholder="Product description..."
-              />
-            </div>
+            {/* Sidebar */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Images */}
+              <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem' }}>
+                <h3 style={{ color: 'white', fontSize: '1.125rem', marginBottom: '1rem' }}>Product Images</h3>
+                {images.map((image, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <input
+                      type="url"
+                      value={image}
+                      onChange={(e) => handleImageChange(index, e.target.value)}
+                      placeholder="Image URL"
+                      style={{ flex: 1, padding: '0.5rem', backgroundColor: '#1a1d2e', border: '1px solid #374151', borderRadius: '0.5rem', color: 'white' }}
+                    />
+                    {images.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeImageField(index)}
+                        style={{ padding: '0.5rem', backgroundColor: '#EF4444', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addImageField}
+                  style={{ width: '100%', padding: '0.5rem', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                >
+                  <Plus size={16} /> Add Image
+                </button>
+              </div>
 
-            {/* Checkboxes */}
-            <div style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9CA3AF' }}>
-                <input
-                  type="checkbox"
-                  name="is_featured"
-                  checked={formData.is_featured}
-                  onChange={handleInputChange}
-                />
-                Featured Product
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9CA3AF' }}>
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleInputChange}
-                />
-                Active
-              </label>
-            </div>
-          </div>
+              {/* Status */}
+              <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem' }}>
+                <h3 style={{ color: 'white', fontSize: '1.125rem', marginBottom: '1rem' }}>Status</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9CA3AF', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.is_featured}
+                      onChange={(e) => handleInputChange('is_featured', e.target.checked)}
+                      style={{ width: '1.25rem', height: '1.25rem' }}
+                    />
+                    <span>Featured Product</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9CA3AF', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.is_active}
+                      onChange={(e) => handleInputChange('is_active', e.target.checked)}
+                      style={{ width: '1.25rem', height: '1.25rem' }}
+                    />
+                    <span>Active</span>
+                  </label>
+                </div>
+              </div>
 
-          {/* Images */}
-          <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white' }}>Product Images</h2>
-              <button
-                type="button"
-                onClick={addImageField}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#3B82F6',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <Plus style={{ width: '1rem', height: '1rem' }} />
-                Add Image
-              </button>
-            </div>
-
-            {formData.images.map((image, index) => (
-              <div key={index} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <input
-                  type="url"
-                  value={image}
-                  onChange={(e) => handleImageChange(index, e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '0.5rem',
-                    backgroundColor: '#1a1d2e',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: 'white'
-                  }}
-                  placeholder="Image URL"
-                />
-                {formData.images.length > 1 && (
+              {/* Actions */}
+              <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem' }}>
+                <h3 style={{ color: 'white', fontSize: '1.125rem', marginBottom: '1rem' }}>Actions</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <button
-                    type="button"
-                    onClick={() => removeImageField(index)}
+                    type="submit"
+                    disabled={loading}
                     style={{
-                      padding: '0.5rem',
-                      backgroundColor: '#EF4444',
+                      padding: '0.75rem',
+                      backgroundColor: loading ? '#6B7280' : '#3B82F6',
                       color: 'white',
-                      borderRadius: '0.5rem',
                       border: 'none',
-                      cursor: 'pointer'
+                      borderRadius: '0.5rem',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem'
                     }}
                   >
-                    <X style={{ width: '1rem', height: '1rem' }} />
+                    <Save size={16} /> {loading ? 'Adding...' : 'Add Product'}
                   </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Specifications */}
-          <div style={{ backgroundColor: '#2a2d47', borderRadius: '0.75rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'white', marginBottom: '1rem' }}>
-              Specifications (Optional)
-            </h2>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  Movement
-                </label>
-                <input
-                  type="text"
-                  name="specifications.movement"
-                  value={formData.specifications.movement}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    backgroundColor: '#1a1d2e',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: 'white'
-                  }}
-                  placeholder="e.g. Automatic"
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  Case Material
-                </label>
-                <input
-                  type="text"
-                  name="specifications.case_material"
-                  value={formData.specifications.case_material}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    backgroundColor: '#1a1d2e',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: 'white'
-                  }}
-                  placeholder="e.g. Stainless Steel"
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  Case Size
-                </label>
-                <input
-                  type="text"
-                  name="specifications.case_size"
-                  value={formData.specifications.case_size}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    backgroundColor: '#1a1d2e',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: 'white'
-                  }}
-                  placeholder="e.g. 42mm"
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                  Water Resistance
-                </label>
-                <input
-                  type="text"
-                  name="specifications.water_resistance"
-                  value={formData.specifications.water_resistance}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '0.5rem',
-                    backgroundColor: '#1a1d2e',
-                    border: '1px solid #374151',
-                    borderRadius: '0.5rem',
-                    color: 'white'
-                  }}
-                  placeholder="e.g. 100m"
-                />
+                  <Link href="/admin/products">
+                    <button
+                      type="button"
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        backgroundColor: '#374151',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '0.5rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Submit Buttons */}
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-            <Link href="/admin/products">
-              <button
-                type="button"
-                style={{
-                  padding: '0.75rem 2rem',
-                  backgroundColor: '#374151',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-            </Link>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '0.75rem 2rem',
-                backgroundColor: loading ? '#6B7280' : '#3B82F6',
-                color: 'white',
-                borderRadius: '0.5rem',
-                border: 'none',
-                cursor: loading ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {loading ? 'Adding...' : 'Add Product'}
-            </button>
           </div>
         </form>
       </div>
