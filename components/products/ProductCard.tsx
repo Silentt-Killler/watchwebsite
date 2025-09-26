@@ -1,11 +1,12 @@
+// components/products/ProductCard.tsx
 'use client'
 
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingCart, Eye, Zap } from 'lucide-react'
+import { ShoppingCart, Eye } from 'lucide-react'
 import { useCart } from '@/contexts/CartContext'
-import { useRouter } from 'next/navigation'
+import { useToast } from '@/contexts/ToastContext'
 
 interface ProductCardProps {
   product: {
@@ -22,8 +23,11 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageIndex, setImageIndex] = useState(0)
+  const [isAdding, setIsAdding] = useState(false)
+
+  // Add these hooks
   const { addToCart } = useCart()
-  const router = useRouter()
+  const { showToast } = useToast()
 
   const handleMouseEnter = () => {
     setIsHovered(true)
@@ -37,40 +41,51 @@ export default function ProductCard({ product }: ProductCardProps) {
     setImageIndex(0)
   }
 
+  // Add to cart handler
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault() // Prevent navigation
+    e.stopPropagation() // Stop event bubbling
+
+    setIsAdding(true)
+
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      image: product.images[0] || '/images/products/placeholder.jpg',
+      category: product.category,
+      brand: product.brand
+    }
+
+    addToCart(cartItem)
+    showToast(`${product.name} added to cart!`, 'success')
+
+    // Visual feedback
+    setTimeout(() => {
+      setIsAdding(false)
+    }, 600)
+  }
+
+  // Quick view handler
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // You can implement quick view modal here
+    console.log('Quick view:', product.id)
+  }
+
   const discountPercentage = product.original_price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : 0
 
-const handleAddToCart = (e: React.MouseEvent) => {
-  e.preventDefault()
-
-  // Call addToCart with the Product object and quantity
-  addToCart(product, 1)
-}
-
-  const handleBuyNow = (e: React.MouseEvent) => {
-    e.preventDefault()
-    const buyNowData = {
-      items: [{
-        product_id: product.id,
-        product_name: product.name,
-        price: product.price,
-        quantity: 1,
-        image: product.images[0] || '/images/products/placeholder.jpg'
-      }],
-      total: product.price
-    }
-    sessionStorage.setItem('buyNowData', JSON.stringify(buyNowData))
-    router.push('/checkout')
-  }
-
   return (
-    <div
-      className="group relative bg-gray-900 rounded-lg overflow-hidden"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <Link href={`/products/${product.id}`}>
+    <Link href={`/products/${product.id}`}>
+      <div
+        className="group relative bg-gray-900 rounded-lg overflow-hidden cursor-pointer"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         <div className="relative aspect-square overflow-hidden bg-gray-800">
           {discountPercentage > 0 && (
             <div className="absolute top-3 left-3 bg-red-600 text-white px-2 py-1 text-sm rounded z-10">
@@ -83,20 +98,32 @@ const handleAddToCart = (e: React.MouseEvent) => {
             alt={product.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
 
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-  <button
-    onClick={(e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      router.push(`/products/${product.id}`)
-    }}
-    className="bg-white text-black p-3 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300"
-  >
-    <Eye className="w-5 h-5" />
-  </button>
-</div>
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
+            <button
+              onClick={handleAddToCart}
+              disabled={isAdding}
+              className={`${
+                isAdding ? 'bg-green-500 scale-110' : 'bg-white hover:scale-110'
+              } text-black p-3 rounded-full transform -translate-y-4 group-hover:translate-y-0 transition-all duration-300`}
+            >
+              {isAdding ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <ShoppingCart className="w-5 h-5" />
+              )}
+            </button>
+            <button
+              onClick={handleQuickView}
+              className="bg-white text-black p-3 rounded-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 hover:scale-110"
+            >
+              <Eye className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="p-4 space-y-2">
@@ -115,25 +142,7 @@ const handleAddToCart = (e: React.MouseEvent) => {
             </span>
           </div>
         </div>
-      </Link>
-
-      {/* Action Buttons */}
-      <div className="p-4 pt-0 flex gap-2">
-        <button
-          onClick={handleAddToCart}
-          className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 px-3 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm"
-        >
-          <ShoppingCart className="w-4 h-4" />
-          <span className="hidden sm:inline">Add to Cart</span>
-        </button>
-        <button
-          onClick={handleBuyNow}
-          className="flex-1 bg-white hover:bg-gray-200 text-black py-2 px-3 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
-        >
-          <Zap className="w-4 h-4" />
-          <span className="hidden sm:inline">Buy Now</span>
-        </button>
       </div>
-    </div>
+    </Link>
   )
 }
