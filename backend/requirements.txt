@@ -10,3 +10,22 @@ python-dotenv==1.0.0
 pydantic==2.5.0
 pydantic-settings==2.1.0
 dnspython==2.4.2
+
+# Create requirements.txt
+fastapi==0.104.0
+uvicorn==0.24.0
+motor==3.3.2
+redis==5.0.1
+httpx==0.25.0
+python-jose==3.3.0
+passlib==1.7.4
+python-multipart==0.0.6
+cloudinary==1.36.0
+
+# Create render.yaml
+services:
+    - type: web
+    name: watch-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT

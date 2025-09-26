@@ -219,6 +219,8 @@ class CreateOrder(BaseModel):
     shipping_cost: float = 100.0
     total_amount: float
     notes: Optional[str] = None
+    payment_option: str  # 'advance' or 'full'
+    payment_amount: float
 
 
 # -------------------- Additional Models for Customer Management --------------------
