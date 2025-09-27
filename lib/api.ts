@@ -182,14 +182,14 @@ export const api = {
     return res.json()
   },
 
-  removeFromCart: async (productId: string, token: string) => {
-    const res = await fetch(`${API_URL}/api/cart/remove/${productId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    if (!res.ok) throw new Error('Failed to remove from cart')
-    return res.json()
-  },
+removeFromCart: async (productId: string, token: string) => {
+  const res = await fetch(`${API_URL}/api/cart/item/${productId}`, {  // Fixed: correct endpoint
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  if (!res.ok) throw new Error('Failed to remove from cart')
+  return res.json()
+},
 
   clearCart: async (token: string) => {
     const res = await fetch(`${API_URL}/api/cart/clear`, {

@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { Search, ShoppingCart, User, Menu, LogOut, Settings, Package } from 'lucide-react'
 import { navigationItems } from '@/lib/constants/navigation'
 import MobileMenu from './MobileMenu'
-import InlineSearch from '@/components/search/InlineSearch'
 import { cn } from '@/lib/utils'
 import { useCart } from '@/contexts/CartContext'
 
@@ -29,6 +28,7 @@ export default function Navbar() {
   useEffect(() => {
     checkAuth()
 
+    // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false)
@@ -98,8 +98,11 @@ export default function Navbar() {
             <div className="flex items-center gap-4 md:gap-6">
               {/* Desktop Icons */}
               <div className="hidden md:flex items-center gap-5">
-                <InlineSearch />
+                <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+                  <Search className="w-5 h-5 text-white"/>
+                </button>
 
+                {/* Cart Icon with Count */}
                 <Link href="/cart" className="p-2 hover:bg-gray-800 rounded-lg transition-colors relative">
                   <ShoppingCart className="w-5 h-5 text-white"/>
                   {itemCount > 0 && (
@@ -118,6 +121,7 @@ export default function Navbar() {
                     <User className="w-5 h-5 text-white"/>
                   </button>
 
+                  {/* Dropdown Menu */}
                   {isUserMenuOpen && (
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50">
                       {user ? (
@@ -127,17 +131,29 @@ export default function Navbar() {
                             <p className="text-xs text-gray-500">{user.email}</p>
                           </div>
 
-                          <Link href="/profile" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                          <Link
+                            href="/profile"
+                            className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
                             <User className="w-4 h-4 mr-3" />
                             My Profile
                           </Link>
 
-                          <Link href="/orders" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                          <Link
+                            href="/orders"
+                            className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
                             <Package className="w-4 h-4 mr-3" />
                             My Orders
                           </Link>
 
-                          <Link href="/settings" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
+                          <Link
+                            href="/settings"
+                            className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
                             <Settings className="w-4 h-4 mr-3" />
                             Settings
                           </Link>
@@ -145,7 +161,11 @@ export default function Navbar() {
                           {user.is_admin && (
                             <>
                               <div className="border-t my-2"></div>
-                              <Link href="/admin/dashboard" className="flex items-center px-4 py-2 text-yellow-600 hover:bg-yellow-50">
+                              <Link
+                                href="/admin/dashboard"
+                                className="flex items-center px-4 py-2 text-yellow-600 hover:bg-yellow-50"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
                                 <Settings className="w-4 h-4 mr-3" />
                                 Admin Dashboard
                               </Link>
@@ -164,10 +184,18 @@ export default function Navbar() {
                         </>
                       ) : (
                         <>
-                          <Link href="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                          <Link
+                            href="/login"
+                            className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
                             Login
                           </Link>
-                          <Link href="/register" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                          <Link
+                            href="/register"
+                            className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
                             Register
                           </Link>
                         </>
@@ -187,8 +215,32 @@ export default function Navbar() {
 
               {/* Mobile Icons */}
               <div className="flex md:hidden items-center gap-3">
-                <InlineSearch />
+                <button className="p-2">
+                  <Search className="w-5 h-5 text-white" />
+                </button>
 
+                {/* Mobile Cart Icon */}
+                <Link href="/cart" className="p-2 relative">
+                  <ShoppingCart className="w-5 h-5 text-white"/>
+                  {itemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-white text-black text-xs rounded-full flex items-center justify-center">
+                      {itemCount}
+                    </span>
+                  )}
+                </Link>
+
+                {/* Mobile User Icon */}
+                {user ? (
+                  <Link href="/profile" className="p-2">
+                    <User className="w-5 h-5 text-white"/>
+                  </Link>
+                ) : (
+                  <Link href="/login" className="p-2">
+                    <User className="w-5 h-5 text-white"/>
+                  </Link>
+                )}
+
+                {/* Mobile Menu Button */}
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   className={cn("menu-hamburger md:hidden text-white", isMobileMenuOpen && "active")}

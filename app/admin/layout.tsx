@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Home, Package, ShoppingBag, Users, Tag, LogOut, Image, Shield } from 'lucide-react'
-
+import { ToastProvider } from '@/contexts/ToastContext'
 
 export default function AdminLayout({
   children,

@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, timedelta
-from typing import Optional, List
+from typing import Optional, List,Dict, Any
 import os
 import csv
 import io
@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from enum import Enum
 import bcrypt
 from bson import ObjectId
+import requests
 
 
 
@@ -106,6 +107,7 @@ class ProductCreate(BaseModel):
     is_featured: bool = False
     is_active: bool = True
     specifications: Optional[dict] = None
+    free_shipping: bool = False
 
     # Item specifications
     model: Optional[str] = None
@@ -335,6 +337,39 @@ class CouponResponse(BaseModel):
     created_at: Optional[str] = None  # Changed to string
 
 
+#serverside tracking
+
+class ServerSideTracking:
+    def __init__(self, measurement_id: str, api_secret: str):
+        self.measurement_id = measurement_id
+        self.api_secret = api_secret
+        self.endpoint = f"https://www.google-analytics.com/mp/collect"
+
+    def track_purchase(self, user_id: str, order_data: Dict[str, Any]):
+        payload = {
+            "client_id": user_id,
+            "events": [{
+                "name": "purchase",
+                "params": {
+                    "transaction_id": order_data["order_id"],
+                    "value": order_data["total_amount"],
+                    "currency": "BDT",
+                    "items": order_data["items"]
+                }
+            }]
+        }
+
+        params = {
+            "measurement_id": self.measurement_id,
+            "api_secret": self.api_secret
+        }
+
+        response = requests.post(
+            self.endpoint,
+            params=params,
+            json=payload
+        )
+        return response.status_code == 204
 
 
 
@@ -817,13 +852,12 @@ async def get_active_brands():
 
 @app.post("/api/cart/add")
 async def add_to_cart(
-        item: CartItem,
-        current_user: dict = Depends(get_current_user)
+    item: CartItem,
+    current_user: dict = Depends(get_current_user)
 ):
     """Add item to cart"""
     from bson import ObjectId
 
-    # Get product
     try:
         product = await db.products.find_one({"_id": ObjectId(item.product_id)})
     except:
@@ -832,20 +866,17 @@ async def add_to_cart(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # Check stock
     if product.get("stock", 0) < item.quantity:
         raise HTTPException(status_code=400, detail="Insufficient stock")
 
     user_id = str(current_user["_id"])
-
-    # Find or create cart
     cart = await db.carts.find_one({"user_id": user_id})
 
-    if cart:
-        # Update existing cart
-        cart_items = cart.get("items", [])
+    # Get the first image or use placeholder
+    product_image = product.get("images", [])[0] if product.get("images") else "/images/products/placeholder.jpg"
 
-        # Check if product already in cart
+    if cart:
+        cart_items = cart.get("items", [])
         existing_item = next((x for x in cart_items if x["product_id"] == item.product_id), None)
 
         if existing_item:
@@ -856,10 +887,9 @@ async def add_to_cart(
                 "product_name": product["name"],
                 "price": product["price"],
                 "quantity": item.quantity,
-                "image": product.get("images", ["/images/products/placeholder.jpg"])[0]
+                "image": product_image  # Fixed: proper image handling
             })
 
-        # Calculate total
         total = sum(item["price"] * item["quantity"] for item in cart_items)
 
         await db.carts.update_one(
@@ -879,7 +909,7 @@ async def add_to_cart(
                 "product_name": product["name"],
                 "price": product["price"],
                 "quantity": item.quantity,
-                "image": product.get("images", ["/images/products/placeholder.jpg"])[0]
+                "image": product_image  # Fixed: proper image handling
             }],
             "total": product["price"] * item.quantity,
             "created_at": datetime.utcnow(),
@@ -887,7 +917,7 @@ async def add_to_cart(
         }
         await db.carts.insert_one(cart_data)
 
-    return {"message": "Item added to cart"}
+    return {"message": "Item added to cart", "item_count": len(cart_items) if cart else 1}
 
 
 @app.get("/api/cart")

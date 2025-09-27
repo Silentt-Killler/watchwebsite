@@ -1,12 +1,11 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
-import '../styles/globals.css'
+import './globals.css'  // Fixed path - should be ./globals.css not ../styles/globals.css
 import TopBar from '@/components/layout/TopBar'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { CartProvider } from '@/contexts/CartContext'
 import { AuthProvider } from '@/contexts/AuthContext'
-import MobileBottomNav from '@/components/layout/MobileBottomNav'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -31,16 +30,15 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-return (
-  <html lang="en" className={inter.className} suppressHydrationWarning>
-    <body className="min-h-screen bg-white" suppressHydrationWarning>
+  return (
+    <html lang="en" className={inter.className} suppressHydrationWarning>
+      <body className="min-h-screen bg-white" suppressHydrationWarning>
         <AuthProvider>
           <CartProvider>
             <TopBar />
             <Navbar />
             <main>{children}</main>
             <Footer />
-             <MobileBottomNav />
           </CartProvider>
         </AuthProvider>
       </body>
